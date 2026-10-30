@@ -35,20 +35,24 @@ const CUSTOM = '';
             <label class="label" for="employee">Zaposleni</label>
             <select id="employee" name="employee" class="field" [ngModel]="employeeId()" (ngModelChange)="onEmployeeChange($event)">
               <option value="">Otvorena smena</option>
-              @for (employee of employees(); track employee.id) {
+              @for (employee of employeeOptions(); track employee.id) {
                 <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}{{ roles(employee) }}</option>
               }
             </select>
           </div>
           <div>
-            <label class="label" for="position">{{ allowedPositions().length > 1 && employeeId() ? 'Radi kao' : 'Pozicija' }}</label>
+            <label class="label" for="position">{{ hasSeveralRoles() ? 'Radi kao' : 'Pozicija' }}</label>
             <select id="position" name="position" class="field" required [ngModel]="positionId()" (ngModelChange)="onPositionChange($event)">
-              @for (position of allowedPositions(); track position.id) {
+              @for (position of positionOptions(); track position.id) {
                 <option [value]="position.id">{{ position.name }}</option>
               }
             </select>
           </div>
         </div>
+
+        @if (notice()) {
+          <p class="-mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">{{ notice() }}</p>
+        }
 
         <div>
           <label class="label" for="date">Datum</label>
@@ -196,6 +200,7 @@ export class ShiftDialog implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   protected readonly confirmDelete = signal(false);
+  protected readonly notice = signal('');
 
   protected readonly editing = computed(() => this.shift() !== null);
   protected readonly overnight = computed(() => this.end() !== '' && this.start() !== '' && this.end() <= this.start());
@@ -207,10 +212,23 @@ export class ShiftDialog implements OnInit {
     return shift.publishedAt ? 'Objavljena smena' : 'Nacrt, zaposleni je još ne vide';
   });
 
-  protected readonly allowedPositions = computed(() => {
-    const employee = this.employees().find((e) => e.id === this.employeeId());
-    return employee ? employee.positions : this.positions();
-  });
+  /** Pozicija se bira prva i uvek su ponuđene sve, pa zaposleni koji nema tu ulogu može da se zameni drugom. */
+  protected readonly positionOptions = computed(() => this.positions());
+
+  /**
+   * Zaposleni se nude samo za izabranu poziciju (za "Konobar" samo konobari). Zaposleni kome je smena već
+   * dodeljena ostaje u izboru i ako je u međuvremenu izgubio poziciju, da polje ne bude prazno.
+   */
+  protected readonly employeeOptions = computed(() =>
+    this.employees().filter(
+      (e) => e.positions.some((p) => p.id === this.positionId()) || e.id === this.shift()?.employeeId,
+    ),
+  );
+
+  private readonly selectedEmployee = computed(() => this.employees().find((e) => e.id === this.employeeId()));
+
+  /** Ko radi više uloga (npr. konobar i šanker) bira kao koju radi ovaj dan. */
+  protected readonly hasSeveralRoles = computed(() => (this.selectedEmployee()?.positions.length ?? 0) > 1);
 
   protected readonly positionTemplates = computed(() =>
     this.templates()
@@ -258,13 +276,20 @@ export class ShiftDialog implements OnInit {
 
   protected onEmployeeChange(employeeId: string): void {
     this.employeeId.set(employeeId);
-    if (!this.allowedPositions().some((p) => p.id === this.positionId())) {
-      this.onPositionChange(this.pickPosition());
-    }
+    this.notice.set('');
   }
 
   protected onPositionChange(positionId: string): void {
     this.positionId.set(positionId);
+    this.notice.set('');
+
+    // Izabrani zaposleni koji nema novu poziciju ne može da je radi: smena ostaje otvorena dok se ne izabere drugi.
+    const employee = this.selectedEmployee();
+    if (employee && !employee.positions.some((p) => p.id === positionId)) {
+      this.employeeId.set('');
+      this.notice.set(`${employee.firstName} ${employee.lastName} nema ovu poziciju, pa je smena ostala otvorena. Izaberi zaposlenog sa ovom pozicijom.`);
+    }
+
     // Šablon druge pozicije više ne važi: pri dodavanju se nudi prva smena nove pozicije.
     if (!this.positionTemplates().some((t) => t.id === this.choice())) {
       if (this.editing()) {
@@ -371,9 +396,11 @@ export class ShiftDialog implements OnInit {
     }
   }
 
+  /** Početna pozicija: ona iz filtera ako je ima (i zaposleni, ako je zadat), inače prva koju zaposleni radi. */
   private pickPosition(): string {
-    const allowed = this.allowedPositions();
     const preferred = this.defaultPositionId();
-    return allowed.find((p) => p.id === preferred)?.id ?? allowed[0]?.id ?? '';
+    const employee = this.selectedEmployee();
+    const candidates = employee ? employee.positions : this.positions();
+    return candidates.find((p) => p.id === preferred)?.id ?? candidates[0]?.id ?? '';
   }
 }

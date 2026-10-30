@@ -35,6 +35,7 @@ describe('ShiftDialog', () => {
     shift?: Shift | null;
     prefill?: { employeeId: string | null; date: string; custom?: boolean } | null;
     templates?: typeof TEMPLATES;
+    defaultPositionId?: string | null;
   }): Promise<HTMLElement> {
     fixture = TestBed.createComponent(ShiftDialog);
     fixture.componentRef.setInput('shift', inputs.shift ?? null);
@@ -43,6 +44,7 @@ describe('ShiftDialog', () => {
     fixture.componentRef.setInput('positions', [WAITER, BARTENDER]);
     fixture.componentRef.setInput('templates', inputs.templates ?? TEMPLATES);
     fixture.componentRef.setInput('timeZone', 'Europe/Belgrade');
+    fixture.componentRef.setInput('defaultPositionId', inputs.defaultPositionId ?? null);
     fixture.componentInstance.saved.subscribe((message) => saved.push(message));
     fixture.detectChanges();
     await fixture.whenStable();
@@ -210,16 +212,88 @@ describe('ShiftDialog', () => {
     expect(saved[0]).toContain('preskočeno 1');
   });
 
-  it('switches to the first shift of the new position when the employee changes', async () => {
-    const root = await open({ prefill: { employeeId: null, date: '2026-11-05' } });
-    const employee = root.querySelector('#employee') as HTMLSelectElement;
+  describe('who can be picked for the chosen position', () => {
+    const employeeOptions = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('#employee option')).map((o) => o.textContent?.trim());
 
-    employee.value = NEMANJA.id;
-    employee.dispatchEvent(new Event('change'));
-    await settle();
+    async function pickPosition(root: HTMLElement, positionId: string): Promise<void> {
+      const select = root.querySelector('#position') as HTMLSelectElement;
+      select.value = Array.from(select.options).find((o) => o.value.includes(positionId))!.value;
+      select.dispatchEvent(new Event('change'));
+      await settle();
+    }
 
-    expect(root.textContent).toContain('nema unapred definisane smene');
-    expect((root.querySelector('#position') as HTMLSelectElement).value).toContain(BARTENDER.id);
+    async function pickEmployee(root: HTMLElement, employeeId: string): Promise<void> {
+      const select = root.querySelector('#employee') as HTMLSelectElement;
+      select.value = Array.from(select.options).find((o) => o.value.includes(employeeId))!.value;
+      select.dispatchEvent(new Event('change'));
+      await settle();
+    }
+
+    it('offers only the people who have the position, and the open shift', async () => {
+      const root = await open({ prefill: { employeeId: null, date: '2026-11-05' } });
+
+      expect(employeeOptions(root)).toEqual(['Otvorena smena', 'Ana Petrović', 'Marko Jovanović (Konobar/Šanker)']);
+    });
+
+    it('changes the list when another position is chosen', async () => {
+      const root = await open({ prefill: { employeeId: null, date: '2026-11-05' } });
+
+      await pickPosition(root, BARTENDER.id);
+
+      expect(employeeOptions(root)).toEqual(['Otvorena smena', 'Nemanja Popović', 'Marko Jovanović (Konobar/Šanker)']);
+    });
+
+    it('starts on the position from the active filter', async () => {
+      const root = await open({ prefill: { employeeId: null, date: '2026-11-05' }, defaultPositionId: BARTENDER.id });
+
+      expect(employeeOptions(root)).not.toContain('Ana Petrović');
+      expect(employeeOptions(root)).toContain('Nemanja Popović');
+    });
+
+    it('assigns an open shift to someone with that position', async () => {
+      const open1 = shift({ employeeId: null, employeeName: null });
+      const root = await open({ shift: open1 });
+
+      expect(employeeOptions(root)).not.toContain('Nemanja Popović');
+      await pickEmployee(root, ANA.id);
+      await submit(root);
+
+      const request = http.expectOne(`/api/shifts/${open1.id}`);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toMatchObject({ employeeId: ANA.id, positionId: WAITER.id });
+      request.flush(shift());
+    });
+
+    it('lets go of the chosen person when the position changes to one they do not have', async () => {
+      const root = await open({ prefill: { employeeId: ANA.id, date: '2026-11-05' } });
+
+      await pickPosition(root, BARTENDER.id);
+
+      expect((root.querySelector('#employee') as HTMLSelectElement).value).toBe('');
+      expect(root.querySelector('[role=status]')?.textContent).toContain('Ana Petrović nema ovu poziciju');
+      await submit(root);
+      const request = http.expectOne('/api/shifts');
+      expect(request.request.body).toMatchObject({ employeeId: null, positionId: BARTENDER.id });
+      request.flush(shift());
+    });
+
+    it('keeps someone who works both roles when switching between them', async () => {
+      const root = await open({ prefill: { employeeId: MARKO.id, date: '2026-11-05' } });
+
+      await pickPosition(root, BARTENDER.id);
+
+      expect((root.querySelector('#employee') as HTMLSelectElement).value).toContain(MARKO.id);
+      expect(root.querySelector('[role=status]')).toBeNull();
+    });
+
+    it('keeps the current assignee in the list when editing, even without the position', async () => {
+      const existing = shift({ employeeId: NEMANJA.id, employeeName: 'Nemanja Popović' });   // konobarska smena, a on je šanker
+      const root = await open({ shift: existing });
+
+      expect(employeeOptions(root)).toContain('Nemanja Popović');
+      expect((root.querySelector('#employee') as HTMLSelectElement).value).toContain(NEMANJA.id);
+    });
   });
 
   it('shows the API error and stays open', async () => {
