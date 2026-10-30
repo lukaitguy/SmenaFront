@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Shift } from '../core/models';
-import { ANA, BARTENDER, FIRST, NEMANJA, SECOND, WAITER, shift } from './schedule.fixtures';
+import { ANA, BARTENDER, BARTENDER_FIRST, BARTENDER_SECOND, FIRST, MARKO, NEMANJA, SECOND, WAITER, shift } from './schedule.fixtures';
 import { ShiftDialog } from './shift-dialog';
 
 const TEMPLATES = [FIRST, SECOND];
@@ -34,13 +34,14 @@ describe('ShiftDialog', () => {
   async function open(inputs: {
     shift?: Shift | null;
     prefill?: { employeeId: string | null; date: string; custom?: boolean } | null;
+    templates?: typeof TEMPLATES;
   }): Promise<HTMLElement> {
     fixture = TestBed.createComponent(ShiftDialog);
     fixture.componentRef.setInput('shift', inputs.shift ?? null);
     fixture.componentRef.setInput('prefill', inputs.prefill ?? null);
-    fixture.componentRef.setInput('employees', [ANA, NEMANJA]);
+    fixture.componentRef.setInput('employees', [ANA, NEMANJA, MARKO]);
     fixture.componentRef.setInput('positions', [WAITER, BARTENDER]);
-    fixture.componentRef.setInput('templates', TEMPLATES);
+    fixture.componentRef.setInput('templates', inputs.templates ?? TEMPLATES);
     fixture.componentRef.setInput('timeZone', 'Europe/Belgrade');
     fixture.componentInstance.saved.subscribe((message) => saved.push(message));
     fixture.detectChanges();
@@ -233,6 +234,80 @@ describe('ShiftDialog', () => {
 
     expect(root.querySelector('[role=alert]')?.textContent).toContain('već ima smenu');
     expect(saved).toEqual([]);
+  });
+
+  describe('someone who works two roles', () => {
+    const ALL_TEMPLATES = [FIRST, SECOND, BARTENDER_FIRST, BARTENDER_SECOND];
+
+    async function pickPosition(root: HTMLElement, positionId: string): Promise<void> {
+      const select = root.querySelector('#position') as HTMLSelectElement;
+      select.value = Array.from(select.options).find((o) => o.value.includes(positionId))!.value;
+      select.dispatchEvent(new Event('change'));
+      await settle();
+    }
+
+    it('shows both roles next to the name and asks as which one they work', async () => {
+      const root = await open({ prefill: { employeeId: MARKO.id, date: '2026-11-05' }, templates: ALL_TEMPLATES });
+
+      const options = Array.from(root.querySelectorAll('#employee option')).map((o) => o.textContent?.trim());
+      expect(options).toContain('Marko Jovanović (Konobar/Šanker)');
+      expect(options).toContain('Ana Petrović');
+      expect(root.querySelector('label[for=position]')?.textContent).toContain('Radi kao');
+      expect(Array.from(root.querySelectorAll('#position option')).map((o) => o.textContent?.trim())).toEqual(['Konobar', 'Šanker']);
+    });
+
+    it('keeps the plain "Pozicija" label for someone with one role', async () => {
+      const root = await open({ prefill: { employeeId: ANA.id, date: '2026-11-05' }, templates: ALL_TEMPLATES });
+
+      expect(root.querySelector('label[for=position]')?.textContent).toContain('Pozicija');
+    });
+
+    it('works that day as a bartender with the bartender shifts', async () => {
+      const root = await open({ prefill: { employeeId: MARKO.id, date: '2026-11-05' }, templates: ALL_TEMPLATES });
+      expect(button(root, 'I').getAttribute('aria-pressed')).toBe('true'); // konobarska I
+
+      await pickPosition(root, BARTENDER.id);
+      await submit(root);
+
+      const request = http.expectOne('/api/shifts');
+      expect(request.request.body).toMatchObject({
+        employeeId: MARKO.id,
+        positionId: BARTENDER.id,
+        templateId: BARTENDER_FIRST.id,
+        startsAt: '2026-11-05T07:00:00.000Z',
+      });
+      request.flush(shift());
+    });
+
+    it('can pick the second bartender shift, which ends the next day at midnight', async () => {
+      const root = await open({ prefill: { employeeId: MARKO.id, date: '2026-11-05' }, templates: ALL_TEMPLATES });
+
+      await pickPosition(root, BARTENDER.id);
+      button(root, 'II').click();
+      await settle();
+      await submit(root);
+
+      const request = http.expectOne('/api/shifts');
+      expect(request.request.body).toMatchObject({
+        positionId: BARTENDER.id,
+        templateId: BARTENDER_SECOND.id,
+        endsAt: '2026-11-05T23:00:00.000Z',
+      });
+      request.flush(shift());
+    });
+
+    it('never offers the other role template for the chosen role', async () => {
+      const root = await open({ prefill: { employeeId: MARKO.id, date: '2026-11-05' }, templates: ALL_TEMPLATES });
+
+      await pickPosition(root, BARTENDER.id);
+      button(root, 'II').click();
+      await pickPosition(root, WAITER.id);
+      await submit(root);
+
+      const request = http.expectOne('/api/shifts');
+      expect(request.request.body).toMatchObject({ positionId: WAITER.id, templateId: FIRST.id });
+      request.flush(shift());
+    });
   });
 
   it('deletes a shift only after confirmation', async () => {

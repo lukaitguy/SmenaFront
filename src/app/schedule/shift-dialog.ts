@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { positionsLabel } from '../core/colors';
 import { Employee, Position, Shift, ShiftTemplate } from '../core/models';
 import { errorMessage } from '../core/problem';
 import { SmenaApi } from '../core/smena-api';
@@ -35,12 +36,12 @@ const CUSTOM = '';
             <select id="employee" name="employee" class="field" [ngModel]="employeeId()" (ngModelChange)="onEmployeeChange($event)">
               <option value="">Otvorena smena</option>
               @for (employee of employees(); track employee.id) {
-                <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}</option>
+                <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}{{ roles(employee) }}</option>
               }
             </select>
           </div>
           <div>
-            <label class="label" for="position">Pozicija</label>
+            <label class="label" for="position">{{ allowedPositions().length > 1 && employeeId() ? 'Radi kao' : 'Pozicija' }}</label>
             <select id="position" name="position" class="field" required [ngModel]="positionId()" (ngModelChange)="onPositionChange($event)">
               @for (position of allowedPositions(); track position.id) {
                 <option [value]="position.id">{{ position.name }}</option>
@@ -248,6 +249,11 @@ export class ShiftDialog implements OnInit {
 
   protected time(value: string): string {
     return shortTime(value);
+  }
+
+  /** Uloge u zagradi samo za one koji rade više njih, npr. " (Konobar/Šanker)". */
+  protected roles(employee: Employee): string {
+    return employee.positions.length > 1 ? ` (${positionsLabel(employee.positions.map((p) => p.name))})` : '';
   }
 
   protected onEmployeeChange(employeeId: string): void {

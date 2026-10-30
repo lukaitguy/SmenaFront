@@ -49,7 +49,8 @@ npm run seed
 |---|---|
 | `vlasnik@demo.rs` | vlasnik (menadžerski pogled) |
 | `nikola@demo.rs` | menadžer |
-| `ana@demo.rs`, `marko@demo.rs`, `jelena@demo.rs`, `stefan@demo.rs` | konobari |
+| `ana@demo.rs`, `jelena@demo.rs`, `stefan@demo.rs` | konobari |
+| `marko@demo.rs` | konobar i šanker (svaki dan kao jedno od toga) |
 | `nemanja@demo.rs` | šanker |
 | `milan@demo.rs`, `ivana@demo.rs` | kuvari |
 | `teodora@demo.rs` | hostesa |
@@ -58,9 +59,10 @@ Lozinka za sve je `lozinka123`. Skripta ostavlja ovu nedelju objavljenu (osim ho
 
 ## Smene po šablonima
 
-Svaka pozicija ima unapred definisane smene (npr. konobari: **I** 08:00-16:00, **II** 16:00-00:00; kuvari: I 07:00-15:00, II 15:00-23:00; hostese samo II 16:00-00:00; šanker nema šablone). U rasporedu se prikazuju kao **I** i **II** (uz vreme sitnijim slovima), a smene sa drugim vremenom samo kao "Od–Do".
+Svaka pozicija ima unapred definisane smene (konobari i šankeri: **I** 08:00-16:00, **II** 16:00-00:00; kuvari: I 07:00-15:00, II 15:00-23:00; hostese samo II 16:00-00:00). U rasporedu se prikazuju kao **I** i **II** (uz vreme sitnijim slovima), a smene sa drugim vremenom samo kao "Od–Do".
 
-- Klik na **+** u ćeliji nudi smene te pozicije i jedan klik pravi smenu. **Drugo vreme (Od – Do)…** otvara pun dijalog za izuzetke, a za poziciju bez šablona (šanker) dijalog se otvara odmah.
+- Klik na **+** u ćeliji nudi smene te pozicije i jedan klik pravi smenu. **Drugo vreme (Od – Do)…** otvara pun dijalog za izuzetke, a za poziciju bez šablona dijalog se otvara odmah.
+- **Više uloga:** ko radi više njih (npr. konobar i šanker) ima ispod imena "Konobar/Šanker". Pri dodavanju se bira kao koju ulogu radi taj dan (brzo dodavanje nudi smene obe uloge, a dijalog ima "Radi kao"). Svaka smena ima svoju ulogu i boju, a filter po poziciji prikazuje tu osobu pod obe.
 - U dijalogu **Nova smena** je unapred izabrana prva smena pozicije, a "Drugo vreme" otkriva polja Od/Do. Isto važi za ponavljanje po danima.
 - Šabloni žive u backendu (`/api/shift-templates`); ekran za njihovo uređivanje još ne postoji.
 

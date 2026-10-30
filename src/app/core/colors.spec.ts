@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { positionColor } from './colors';
+import { positionColor, positionsLabel } from './colors';
 
 describe('positionColor', () => {
   it('gives the default positions four different colors', () => {
@@ -16,5 +16,16 @@ describe('positionColor', () => {
     for (const name of ['Barista', 'Pomoćni kuvar', 'Dostavljač', 'Čistač', 'Sommelier']) {
       expect(defaults.has(positionColor(name).chip)).toBe(false);
     }
+  });
+});
+
+describe('positionsLabel', () => {
+  it('joins several roles with a slash', () => {
+    expect(positionsLabel(['Konobar', 'Šanker'])).toBe('Konobar/Šanker');
+  });
+
+  it('is just the name for one role and empty for none', () => {
+    expect(positionsLabel(['Kuvar'])).toBe('Kuvar');
+    expect(positionsLabel([])).toBe('');
   });
 });

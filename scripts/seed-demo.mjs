@@ -2,7 +2,8 @@
 /**
  * Pravi demo restoran kroz API: vlasnika, menadžera, zaposlene po pozicijama, raspored za ovu i sledeću
  * nedelju (ova nedelja objavljena osim hostesa, sledeća kao nacrt) i par otvorenih smena.
- * Smene se prave po šablonima pozicija (I, II), a jedna je vanredna sa drugim vremenom (Od-Do).
+ * Smene se prave po šablonima pozicija (I, II), a jedna je vanredna sa drugim vremenom (Od-Do). Marko radi i kao
+ * konobar i kao šanker (svaki dan kao jedno od toga).
  *
  * Pokretanje (backend mora da radi):   npm run seed
  * Zameni postojeće demo smene:         npm run seed -- --reset
@@ -20,30 +21,39 @@ const RESET = process.argv.includes('--reset');
 const OWNER = { email: 'vlasnik@demo.rs', firstName: 'Marija', lastName: 'Vlasnik' };
 
 /**
- * Radni dani: 1 = ponedeljak ... 7 = nedelja. `template` je naziv smene pozicije ("I" ili "II"); šanker nema
- * šablone, pa ima proizvoljno vreme (from, to).
+ * `positions` su uloge zaposlenog (neko radi i kao konobar i kao šanker), a `work` su njegove smene: pozicija kao
+ * koju radi, radni dani (1 = ponedeljak ... 7 = nedelja) i naziv šablona te pozicije ("I" ili "II").
  */
 const STAFF = [
-  { email: 'nikola@demo.rs', firstName: 'Nikola', lastName: 'Lazić', role: 'Manager', position: null },
-  { email: 'ana@demo.rs', firstName: 'Ana', lastName: 'Petrović', position: 'Konobar', days: [1, 2, 3, 5, 6], template: 'I' },
-  { email: 'marko@demo.rs', firstName: 'Marko', lastName: 'Jovanović', position: 'Konobar', days: [2, 4, 5, 6, 7], template: 'II' },
-  { email: 'jelena@demo.rs', firstName: 'Jelena', lastName: 'Nikolić', position: 'Konobar', days: [1, 3, 4, 6, 7], template: 'II' },
-  { email: 'stefan@demo.rs', firstName: 'Stefan', lastName: 'Ilić', position: 'Konobar', days: [1, 2, 4, 5, 7], template: 'I' },
-  { email: 'nemanja@demo.rs', firstName: 'Nemanja', lastName: 'Popović', position: 'Šanker', days: [3, 4, 5, 6, 7], from: '17:00', to: '01:00' },
-  { email: 'milan@demo.rs', firstName: 'Milan', lastName: 'Đorđević', position: 'Kuvar', days: [1, 2, 3, 4, 5], template: 'I' },
-  { email: 'ivana@demo.rs', firstName: 'Ivana', lastName: 'Stojanović', position: 'Kuvar', days: [3, 4, 5, 6, 7], template: 'II' },
-  { email: 'teodora@demo.rs', firstName: 'Teodora', lastName: 'Marković', position: 'Hostesa', days: [4, 5, 6, 7], template: 'II' },
+  { email: 'nikola@demo.rs', firstName: 'Nikola', lastName: 'Lazić', role: 'Manager', positions: [], work: [] },
+  { email: 'ana@demo.rs', firstName: 'Ana', lastName: 'Petrović', positions: ['Konobar'], work: [{ position: 'Konobar', days: [1, 2, 3, 5, 6], template: 'I' }] },
+  {
+    email: 'marko@demo.rs',
+    firstName: 'Marko',
+    lastName: 'Jovanović',
+    positions: ['Konobar', 'Šanker'],
+    work: [
+      { position: 'Konobar', days: [2, 4], template: 'II' },
+      { position: 'Šanker', days: [5, 6, 7], template: 'II' },
+    ],
+  },
+  { email: 'jelena@demo.rs', firstName: 'Jelena', lastName: 'Nikolić', positions: ['Konobar'], work: [{ position: 'Konobar', days: [1, 3, 4, 6, 7], template: 'II' }] },
+  { email: 'stefan@demo.rs', firstName: 'Stefan', lastName: 'Ilić', positions: ['Konobar'], work: [{ position: 'Konobar', days: [1, 2, 4, 5, 7], template: 'I' }] },
+  { email: 'nemanja@demo.rs', firstName: 'Nemanja', lastName: 'Popović', positions: ['Šanker'], work: [{ position: 'Šanker', days: [3, 4, 5, 6, 7], template: 'II' }] },
+  { email: 'milan@demo.rs', firstName: 'Milan', lastName: 'Đorđević', positions: ['Kuvar'], work: [{ position: 'Kuvar', days: [1, 2, 3, 4, 5], template: 'I' }] },
+  { email: 'ivana@demo.rs', firstName: 'Ivana', lastName: 'Stojanović', positions: ['Kuvar'], work: [{ position: 'Kuvar', days: [3, 4, 5, 6, 7], template: 'II' }] },
+  { email: 'teodora@demo.rs', firstName: 'Teodora', lastName: 'Marković', positions: ['Hostesa'], work: [{ position: 'Hostesa', days: [4, 5, 6, 7], template: 'II' }] },
 ];
 
 /** Vanredne smene sa proizvoljnim vremenom: [e-mail, nedelja (0 = ova), radni dan, od, do, napomena]. */
 const EXTRAS = [['stefan@demo.rs', 0, 6, '10:00', '18:00', 'Vanredno: priprema za događaj']];
 
-/** Otvorene smene: [nedelja (0 = ova), radni dan, pozicija, šablon ili null, od, do]. */
+/** Otvorene smene: [nedelja (0 = ova), radni dan, pozicija, šablon]. */
 const OPEN_SHIFTS = [
-  [0, 5, 'Konobar', 'II', null, null],
-  [0, 6, 'Šanker', null, '17:00', '01:00'],
-  [1, 6, 'Konobar', 'II', null, null],
-  [1, 7, 'Kuvar', 'I', null, null],
+  [0, 5, 'Konobar', 'II'],
+  [0, 6, 'Šanker', 'I'],
+  [1, 6, 'Konobar', 'II'],
+  [1, 7, 'Kuvar', 'I'],
 ];
 
 async function call(method, path, { token, body } = {}) {
@@ -86,9 +96,10 @@ async function ok(method, path, options) {
 
 function printAccounts() {
   console.log('\nDemo nalozi (lozinka za sve: ' + PASSWORD + '):');
-  console.log(`  vlasnik   ${OWNER.email}`);
+  console.log(`  ${'vlasnik'.padEnd(14)} ${OWNER.email}`);
   for (const person of STAFF) {
-    console.log(`  ${(person.role === 'Manager' ? 'menadžer' : (person.position ?? '').toLowerCase()).padEnd(9)} ${person.email}`);
+    const role = person.role === 'Manager' ? 'menadžer' : person.positions.join('/').toLowerCase();
+    console.log(`  ${role.padEnd(14)} ${person.email}`);
   }
 }
 
@@ -140,18 +151,22 @@ async function main() {
 
   const employees = await ok('GET', '/api/employees', { token });
   const byName = new Map(employees.map((e) => [`${e.firstName} ${e.lastName}`, e]));
-  for (const person of STAFF.filter((p) => p.position)) {
+  for (const person of STAFF.filter((p) => p.positions.length > 0)) {
     const employee = byName.get(`${person.firstName} ${person.lastName}`);
     if (!employee) {
       throw new Error(`Zaposleni ${person.firstName} ${person.lastName} ne postoji. Obriši demo restoran ili ga napravi iznova.`);
     }
     person.id = employee.id;
-    if (fresh) {
-      await ok('PUT', `/api/employees/${employee.id}`, {
-        token,
-        body: { firstName: employee.firstName, lastName: employee.lastName, role: employee.role, positionIds: [positions.get(person.position)] },
-      });
-    }
+    // I pri --reset: uloge se uvek postavljaju iznova (npr. kad je neko dobio drugu ulogu).
+    await ok('PUT', `/api/employees/${employee.id}`, {
+      token,
+      body: {
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        role: employee.role,
+        positionIds: person.positions.map((name) => positions.get(name)),
+      },
+    });
   }
 
   const thisWeek = weekStart(todayIn(TIME_ZONE));
@@ -194,18 +209,20 @@ async function main() {
 
   for (const week of [0, 1]) {
     const monday = addDays(thisWeek, week * 7);
-    for (const person of STAFF.filter((p) => p.position)) {
-      for (const day of person.days) {
-        await create(shiftBody(person.id, person.position, addDays(monday, day - 1), person));
+    for (const person of STAFF) {
+      for (const { position, days, template } of person.work) {
+        for (const day of days) {
+          await create(shiftBody(person.id, position, addDays(monday, day - 1), { template }));
+        }
       }
     }
   }
   for (const [email, week, day, from, to, note] of EXTRAS) {
     const person = STAFF.find((p) => p.email === email);
-    await create(shiftBody(person.id, person.position, addDays(thisWeek, week * 7 + day - 1), { from, to, note }));
+    await create(shiftBody(person.id, person.positions[0], addDays(thisWeek, week * 7 + day - 1), { from, to, note }));
   }
-  for (const [week, day, position, template, from, to] of OPEN_SHIFTS) {
-    await create(shiftBody(null, position, addDays(thisWeek, week * 7 + day - 1), { template, from, to }));
+  for (const [week, day, position, template] of OPEN_SHIFTS) {
+    await create(shiftBody(null, position, addDays(thisWeek, week * 7 + day - 1), { template }));
   }
 
   // Ova nedelja je objavljena za sve osim hostesa (ostaju nacrt), sledeća nedelja je ceo nacrt.

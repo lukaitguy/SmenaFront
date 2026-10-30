@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { AuthService } from '../../core/auth';
-import { positionColor } from '../../core/colors';
+import { positionColor, positionsLabel } from '../../core/colors';
 import { Employee, Position, Shift, ShiftTemplate } from '../../core/models';
 import { errorMessage } from '../../core/problem';
 import { SmenaApi } from '../../core/smena-api';
@@ -196,7 +196,7 @@ export class ManagerSchedulePage {
         known.set(employee.id, {
           id: employee.id,
           label: `${employee.firstName} ${employee.lastName}`,
-          hint: employee.positions.map((p) => p.name).join(', '),
+          hint: positionsLabel(employee.positions.map((p) => p.name)),
         });
       }
     }

@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { AuthService } from '../../core/auth';
-import { positionColor } from '../../core/colors';
+import { positionColor, positionsLabel } from '../../core/colors';
 import { Shift } from '../../core/models';
 import { errorMessage } from '../../core/problem';
 import { SmenaApi } from '../../core/smena-api';
@@ -100,14 +100,21 @@ export class RosterPage {
   /** Redovi su zaposleni koji rade u ovoj nedelji (moj red prvi), plus otvorene smene. */
   protected readonly rows = computed<GridRow[]>(() => {
     const people = new Map<string, string>();
+    const roles = new Map<string, Set<string>>();
     for (const shift of this.weekShifts()) {
       if (shift.employeeId && shift.employeeName) {
         people.set(shift.employeeId, shift.employeeName);
+        roles.set(shift.employeeId, (roles.get(shift.employeeId) ?? new Set()).add(shift.positionName));
       }
     }
     const me = this.myId();
     const sorted = [...people.entries()].sort(([a, an], [b, bn]) => (a === me ? -1 : b === me ? 1 : an.localeCompare(bn, 'sr-Latn')));
-    const rows: GridRow[] = sorted.map(([id, name]) => ({ id, label: id === me ? `${name} (ti)` : name }));
+    // Ko je u nedelji radio više uloga, ispod imena piše npr. "Konobar/Šanker".
+    const rows: GridRow[] = sorted.map(([id, name]) => ({
+      id,
+      label: id === me ? `${name} (ti)` : name,
+      hint: positionsLabel([...(roles.get(id) ?? [])].sort((a, b) => a.localeCompare(b, 'sr-Latn'))),
+    }));
     if (this.weekShifts().some((s) => s.employeeId === null)) {
       rows.push({ id: null, label: 'Otvorene smene', hint: 'traži ih kod menadžera' });
     }

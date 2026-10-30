@@ -21,6 +21,9 @@ export interface QuickGroup {
   template: `
     <app-modal title="Dodaj smenu" [subtitle]="who() + ' · ' + dayLabel()" (closed)="closed.emit()">
       <div class="space-y-4">
+        @if (groups().length > 1) {
+          <p class="text-sm text-slate-600">Radi više uloga. Izaberi smenu i kao koju ulogu radi ovaj dan.</p>
+        }
         @for (group of groups(); track group.position.id) {
           <section>
             @if (groups().length > 1) {

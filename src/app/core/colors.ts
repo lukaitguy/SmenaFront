@@ -1,3 +1,8 @@
+/** Uloge zaposlenog u jednom redu, npr. "Konobar/Šanker". */
+export function positionsLabel(names: readonly string[]): string {
+  return names.join('/');
+}
+
 /** Boje pozicija. Klase su ispisane u celosti da ih Tailwind pronađe pri build-u. */
 export interface PositionColor {
   chip: string;

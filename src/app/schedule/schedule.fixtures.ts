@@ -24,6 +24,26 @@ export const SECOND: ShiftTemplate = {
   endsNextDay: true,
 };
 
+export const BARTENDER_FIRST: ShiftTemplate = {
+  id: 't-bartender-first',
+  positionId: BARTENDER.id,
+  positionName: 'Šanker',
+  name: 'I',
+  startTime: '08:00:00',
+  endTime: '16:00:00',
+  endsNextDay: false,
+};
+
+export const BARTENDER_SECOND: ShiftTemplate = {
+  id: 't-bartender-second',
+  positionId: BARTENDER.id,
+  positionName: 'Šanker',
+  name: 'II',
+  startTime: '16:00:00',
+  endTime: '00:00:00',
+  endsNextDay: true,
+};
+
 export const ANA: Employee = {
   id: 'e-ana',
   firstName: 'Ana',
@@ -31,6 +51,16 @@ export const ANA: Employee = {
   role: 'Staff',
   status: 'Active',
   positions: [WAITER],
+};
+
+/** Radi i kao konobar i kao šanker. */
+export const MARKO: Employee = {
+  id: 'e-marko',
+  firstName: 'Marko',
+  lastName: 'Jovanović',
+  role: 'Staff',
+  status: 'Active',
+  positions: [WAITER, BARTENDER],
 };
 
 export const NEMANJA: Employee = {
