@@ -59,7 +59,7 @@ interface Section {
                 class="field flex-1"
                 [name]="'name-' + section.position.id"
                 maxlength="100"
-                placeholder="Šta je ispalo (npr. Pljeskavica)"
+                placeholder="Šta je nestalo (npr. Pljeskavica)"
                 [attr.aria-label]="'Nova stavka, ' + section.title"
                 [ngModel]="draft(section)"
                 (ngModelChange)="setDraft(section, $event)"
