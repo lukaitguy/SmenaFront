@@ -50,6 +50,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/days-off/days-off.page').then((m) => m.DaysOffPage),
       },
       {
+        path: 'zaposleni',
+        canMatch: [managerMatch],
+        loadComponent: () => import('./features/employees/employees.page').then((m) => m.EmployeesPage),
+      },
+      {
         path: 'najave',
         loadComponent: () => import('./features/announcements/announcements.page').then((m) => m.AnnouncementsPage),
       },

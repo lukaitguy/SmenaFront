@@ -229,3 +229,33 @@ export interface CreateAnnouncementRequest {
   positionIds: string[];
   employeeIds: string[];
 }
+
+/** Pozivnica koja još čeka odgovor. */
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  positionId: string | null;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CreateInvitationRequest {
+  email: string;
+  role: Role;
+  positionId: string | null;
+}
+
+/** Token se vraća samo jednom, pri pravljenju; acceptUrl je link koji se šalje zaposlenom. */
+export interface CreatedInvitation {
+  invitation: Invitation;
+  acceptUrl: string;
+  emailSent: boolean;
+}
+
+export interface UpdateEmployeeRequest {
+  firstName: string;
+  lastName: string;
+  role: Role;
+  positionIds: string[];
+}

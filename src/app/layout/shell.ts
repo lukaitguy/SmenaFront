@@ -73,6 +73,7 @@ export class Shell {
       ? [
           { path: '/raspored', label: 'Raspored' },
           { path: '/zahtevi', label: 'Zahtevi' },
+          { path: '/zaposleni', label: 'Zaposleni' },
           { path: '/moje-smene', label: 'Moje smene' },
           { path: '/najave', label: 'Najave' },
           { path: '/zamene', label: 'Zamene' },

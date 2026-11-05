@@ -3,6 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   Announcement,
+  CreateInvitationRequest,
+  CreatedInvitation,
+  Invitation,
+  UpdateEmployeeRequest,
   Claim,
   CreateAnnouncementRequest,
   EightySixItem,
@@ -37,6 +41,27 @@ export class SmenaApi {
 
   employees(): Promise<Employee[]> {
     return firstValueFrom(this.http.get<Employee[]>('/api/employees'));
+  }
+
+  updateEmployee(id: string, request: UpdateEmployeeRequest): Promise<Employee> {
+    return firstValueFrom(this.http.put<Employee>(`/api/employees/${id}`, request));
+  }
+
+  setEmployeeStatus(id: string, status: 'Active' | 'Inactive'): Promise<Employee> {
+    return firstValueFrom(this.http.put<Employee>(`/api/employees/${id}/status`, { status }));
+  }
+
+  /** Pozivnice koje još čekaju odgovor. */
+  invitations(): Promise<Invitation[]> {
+    return firstValueFrom(this.http.get<Invitation[]>('/api/invitations'));
+  }
+
+  createInvitation(request: CreateInvitationRequest): Promise<CreatedInvitation> {
+    return firstValueFrom(this.http.post<CreatedInvitation>('/api/invitations', request));
+  }
+
+  revokeInvitation(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/invitations/${id}`));
   }
 
   /** Raspored restorana za menadžera, uključujući nacrte. */
