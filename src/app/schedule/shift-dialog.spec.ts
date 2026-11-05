@@ -202,6 +202,21 @@ describe('ShiftDialog', () => {
     request.flush(existing);
   });
 
+  it('opens a shift as a custom time when its template was changed afterwards, so saving it is not refused', async () => {
+    // Šablon II je posle pravljenja smene pomeren na 17:00-01:00, a smena je ostala na 16:00-00:00.
+    const moved = { ...SECOND, startTime: '17:00:00', endTime: '01:00:00' };
+    const existing = shift({ templateId: SECOND.id, templateName: 'II', startsAt: '2026-11-05T15:00:00+00:00', endsAt: '2026-11-05T23:00:00+00:00' });
+    const root = await open({ shift: existing, templates: [FIRST, moved] });
+
+    expect(button(root, 'II').getAttribute('aria-pressed')).toBe('false');
+    expect(button(root, 'Drugo vreme').getAttribute('aria-pressed')).toBe('true');
+    await submit(root);
+
+    const request = http.expectOne(`/api/shifts/${existing.id}`);
+    expect(request.request.body).toMatchObject({ templateId: null, startsAt: '2026-11-05T15:00:00.000Z' });
+    request.flush(existing);
+  });
+
   it('shows a shift without a template as a custom time and can move it to a template', async () => {
     const existing = shift({ startsAt: '2026-11-05T08:30:00+00:00', endsAt: '2026-11-05T16:30:00+00:00' });
     const root = await open({ shift: existing });

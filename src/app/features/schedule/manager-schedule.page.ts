@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth';
 import { positionColor, positionsLabel } from '../../core/colors';
 import { Employee, Position, Shift, ShiftTemplate } from '../../core/models';
@@ -16,7 +17,7 @@ type DialogState = { shift: Shift | null; prefill: { employeeId: string | null; 
 
 @Component({
   selector: 'app-manager-schedule-page',
-  imports: [WeekGrid, ShiftDialog, QuickAddDialog, Modal],
+  imports: [WeekGrid, ShiftDialog, QuickAddDialog, Modal, RouterLink],
   template: `
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <div>
@@ -31,6 +32,7 @@ type DialogState = { shift: Shift | null; prefill: { employeeId: string | null; 
           <button type="button" class="px-3 py-2 text-slate-600 hover:bg-slate-50" aria-label="Sledeća nedelja" (click)="shiftWeek(1)">›</button>
         </div>
         <button type="button" class="btn-secondary" [disabled]="isCurrentWeek()" (click)="goToday()">Ova nedelja</button>
+        <a routerLink="/sabloni" class="btn-secondary">Šabloni</a>
         <button type="button" class="btn-primary" (click)="openAdd(null, defaultDate())">+ Nova smena</button>
       </div>
     </div>

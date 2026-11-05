@@ -43,6 +43,19 @@ export class SmenaApi {
     return firstValueFrom(this.http.get<Employee[]>('/api/employees'));
   }
 
+  /** Vremena su "HH:mm:ss" po lokalnom vremenu restorana; kraj pre ili jednak početku je smena do sutradan. */
+  createShiftTemplate(positionId: string, name: string, startTime: string, endTime: string): Promise<ShiftTemplate> {
+    return firstValueFrom(this.http.post<ShiftTemplate>('/api/shift-templates', { positionId, name, startTime, endTime }));
+  }
+
+  updateShiftTemplate(id: string, name: string, startTime: string, endTime: string): Promise<ShiftTemplate> {
+    return firstValueFrom(this.http.put<ShiftTemplate>(`/api/shift-templates/${id}`, { name, startTime, endTime }));
+  }
+
+  deleteShiftTemplate(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/shift-templates/${id}`));
+  }
+
   createPosition(name: string): Promise<Position> {
     return firstValueFrom(this.http.post<Position>('/api/positions', { name }));
   }

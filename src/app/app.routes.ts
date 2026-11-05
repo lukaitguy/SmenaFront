@@ -50,6 +50,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/days-off/days-off.page').then((m) => m.DaysOffPage),
       },
       {
+        path: 'sabloni',
+        canMatch: [managerMatch],
+        loadComponent: () => import('./features/templates/templates.page').then((m) => m.TemplatesPage),
+      },
+      {
         path: 'pozicije',
         canMatch: [managerMatch],
         loadComponent: () => import('./features/positions/positions.page').then((m) => m.PositionsPage),

@@ -262,8 +262,11 @@ export class ShiftDialog implements OnInit {
       this.start.set(start.time);
       this.end.set(utcToLocal(shift.endsAt, this.timeZone()).time);
       this.note.set(shift.note ?? '');
-      // Smena napravljena po šablonu ostaje na šablonu, a sve ostale su proizvoljne (Od-Do).
-      this.choice.set(this.templates().some((t) => t.id === shift.templateId) ? shift.templateId! : CUSTOM);
+      // Smena napravljena po šablonu ostaje na šablonu dok joj se vreme poklapa sa njim. Ako je šablon posle toga
+      // promenjen, smena zadržava svoje vreme i prikazuje se kao proizvoljna (Od-Do), jer bi server odbio nepodudaranje.
+      const template = this.templates().find((t) => t.id === shift.templateId);
+      const matches = template !== undefined && shortTime(template.startTime) === this.start() && shortTime(template.endTime) === this.end();
+      this.choice.set(matches ? template.id : CUSTOM);
       return;
     }
 
