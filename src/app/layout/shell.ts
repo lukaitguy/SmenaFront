@@ -1,6 +1,7 @@
 import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth';
+import { AnnouncementsStore } from '../core/announcements';
 import { BoardConnection } from '../core/board';
 
 @Component({
@@ -27,6 +28,12 @@ import { BoardConnection } from '../core/board';
               class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 sm:px-3"
             >
               {{ item.label }}
+              @if (item.path === '/najave' && announcements.unreadCount() > 0) {
+                <span
+                  class="ml-1 inline-grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[11px] font-semibold leading-none text-white"
+                  [attr.aria-label]="announcements.unreadCount() + ' nepročitanih najava'"
+                >{{ announcements.unreadCount() }}</span>
+              }
             </a>
           }
         </nav>
@@ -49,11 +56,16 @@ import { BoardConnection } from '../core/board';
 export class Shell {
   protected readonly auth = inject(AuthService);
   private readonly board = inject(BoardConnection);
+  protected readonly announcements = inject(AnnouncementsStore);
 
   constructor() {
     // Dok je neko prijavljen, ekran smene prima promene uživo; odjava (uništen shell) prekida vezu.
     this.board.start();
-    inject(DestroyRef).onDestroy(() => void this.board.stop());
+    this.announcements.start();
+    inject(DestroyRef).onDestroy(() => {
+      void this.board.stop();
+      this.announcements.stop();
+    });
   }
 
   protected readonly nav = computed(() =>
@@ -62,6 +74,7 @@ export class Shell {
           { path: '/raspored', label: 'Raspored' },
           { path: '/zahtevi', label: 'Zahtevi' },
           { path: '/moje-smene', label: 'Moje smene' },
+          { path: '/najave', label: 'Najave' },
           { path: '/zamene', label: 'Zamene' },
           { path: '/slobodni-dani', label: 'Slobodni dani' },
           { path: '/86-lista', label: '86 lista' },
@@ -69,6 +82,7 @@ export class Shell {
       : [
           { path: '/moje-smene', label: 'Moje smene' },
           { path: '/raspored', label: 'Raspored' },
+          { path: '/najave', label: 'Najave' },
           { path: '/zamene', label: 'Zamene' },
           { path: '/slobodni-dani', label: 'Slobodni dani' },
           { path: '/86-lista', label: '86 lista' },

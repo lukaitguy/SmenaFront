@@ -36,6 +36,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/days-off/days-off.page').then((m) => m.DaysOffPage),
       },
       {
+        path: 'najave',
+        loadComponent: () => import('./features/announcements/announcements.page').then((m) => m.AnnouncementsPage),
+      },
+      {
         path: '86-lista',
         loadComponent: () => import('./features/eighty-six/eighty-six.page').then((m) => m.EightySixPage),
       },

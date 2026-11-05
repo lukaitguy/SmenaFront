@@ -2,7 +2,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
+  Announcement,
   Claim,
+  CreateAnnouncementRequest,
   EightySixItem,
   ClaimStatus,
   DayOff,
@@ -132,6 +134,27 @@ export class SmenaApi {
 
   removeEightySix(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`/api/eighty-six/${id}`));
+  }
+
+  /** Sve najave sa spiskom ko je pročitao (menadžer). */
+  announcements(): Promise<Announcement[]> {
+    return firstValueFrom(this.http.get<Announcement[]>('/api/announcements'));
+  }
+
+  myAnnouncements(): Promise<Announcement[]> {
+    return firstValueFrom(this.http.get<Announcement[]>('/api/announcements/mine'));
+  }
+
+  createAnnouncement(request: CreateAnnouncementRequest): Promise<Announcement> {
+    return firstValueFrom(this.http.post<Announcement>('/api/announcements', request));
+  }
+
+  markAnnouncementRead(id: string): Promise<void> {
+    return firstValueFrom(this.http.post<void>(`/api/announcements/${id}/read`, null));
+  }
+
+  deleteAnnouncement(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/announcements/${id}`));
   }
 
   /** Otvorene smene koje prijavljeni zaposleni može da traži (njegove pozicije, tek počinju). */

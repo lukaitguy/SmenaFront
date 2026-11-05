@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, InjectionToken, inject, signal } from '@angular
 import { HubConnection, HubConnectionBuilder, HubConnectionState, IRetryPolicy } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 import { AuthService } from './auth';
-import { EightySixItem } from './models';
+import { Announcement, EightySixItem } from './models';
 
 /** Delovi HubConnection-a koje koristimo; lak za zamenu u testovima. */
 export type BoardHub = Pick<HubConnection, 'on' | 'start' | 'stop' | 'onreconnecting' | 'onreconnected' | 'onclose' | 'state'>;
@@ -39,6 +39,12 @@ export class BoardConnection {
   readonly status = signal<BoardStatus>('disconnected');
   readonly eightySixAdded = new Subject<EightySixItem>();
   readonly eightySixRemoved = new Subject<string>();
+  readonly announcementCreated = new Subject<Announcement>();
+  readonly announcementDeleted = new Subject<string>();
+  /** Menadžerima: spisak najava se promenio, povuci ga ponovo. */
+  readonly announcementsChanged = new Subject<void>();
+  /** Menadžerima: neko je potvrdio da je pročitao najavu. */
+  readonly announcementRead = new Subject<{ announcementId: string; employeeId: string; readAt: string }>();
   /** Veza je vraćena posle prekida: ekrani treba da povuku snimak stanja. */
   readonly reconnected = new Subject<void>();
 
@@ -59,6 +65,10 @@ export class BoardConnection {
 
     hub.on('eightySixAdded', (item: EightySixItem) => this.eightySixAdded.next(item));
     hub.on('eightySixRemoved', (id: string) => this.eightySixRemoved.next(id));
+    hub.on('announcementCreated', (item: Announcement) => this.announcementCreated.next(item));
+    hub.on('announcementDeleted', (id: string) => this.announcementDeleted.next(id));
+    hub.on('announcementsChanged', () => this.announcementsChanged.next());
+    hub.on('announcementRead', (read: { announcementId: string; employeeId: string; readAt: string }) => this.announcementRead.next(read));
     hub.onreconnecting(() => this.status.set('reconnecting'));
     hub.onreconnected(() => {
       this.status.set('connected');

@@ -181,3 +181,37 @@ export interface EightySixItem {
   createdByName: string;
   createdAt: string;
 }
+
+export interface AnnouncementRecipient {
+  employeeId: string;
+  name: string;
+  readAt: string | null;
+}
+
+/** Najava menadžera (najčešće sastanak) za uloge i/ili pojedince. */
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string | null;
+  /** Termin sastanka; null je obična najava. */
+  meetingAt: string | null;
+  createdByEmployeeId: string;
+  createdByName: string;
+  createdAt: string;
+  /** Nazivi uloga, pa imena pojedinačno izabranih osoba. */
+  audience: string[];
+  /** Prijavljeni zaposleni je primalac (menadžer vidi i tuđe najave). */
+  forMe: boolean;
+  /** Kad je prijavljeni primalac potvrdio "Pročitao sam". */
+  readAt: string | null;
+  /** Samo za menadžera: ko je primio i ko je pročitao. */
+  recipients: AnnouncementRecipient[] | null;
+}
+
+export interface CreateAnnouncementRequest {
+  title: string;
+  body: string | null;
+  meetingAt: string | null;
+  positionIds: string[];
+  employeeIds: string[];
+}
