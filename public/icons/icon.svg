@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Smena</title>
+  <rect width="512" height="512" fill="#4f46e5"/>
+  <!-- Isti kalendar kao u zaglavlju aplikacije, u sredini (bezbedna zona za maskable ikonicu) -->
+  <g transform="translate(96 96) scale(13.333)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4.5" width="18" height="16" rx="2.5"/>
+    <path d="M3 9.5h18M8 3v3M16 3v3"/>
+  </g>
+</svg>

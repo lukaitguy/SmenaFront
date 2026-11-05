@@ -64,7 +64,23 @@ Svaka pozicija ima unapred definisane smene (konobari i šankeri: **I** 08:00-16
 - Klik na **+** u ćeliji nudi smene te pozicije i jedan klik pravi smenu. **Drugo vreme (Od – Do)…** otvara pun dijalog za izuzetke, a za poziciju bez šablona dijalog se otvara odmah.
 - **Više uloga:** ko radi više njih (npr. konobar i šanker) ima ispod imena "Konobar/Šanker". Pri dodavanju se bira kao koju ulogu radi taj dan (brzo dodavanje nudi smene obe uloge, a dijalog ima "Radi kao"). Svaka smena ima svoju ulogu i boju, a filter po poziciji prikazuje tu osobu pod obe.
 - U dijalogu **Nova smena** je unapred izabrana prva smena pozicije, a "Drugo vreme" otkriva polja Od/Do. Isto važi za ponavljanje po danima.
-- Šabloni žive u backendu (`/api/shift-templates`); ekran za njihovo uređivanje još ne postoji.
+- Šabloni se uređuju na ekranu **Šabloni** (dugme na stranici Raspored); izmena važi za nove smene, a postojeće zadržavaju svoje vreme.
+
+## Aplikacija na telefonu (PWA) i obaveštenja
+
+Smena se može dodati na početni ekran i radi kao prava aplikacija (manifest, ikonice, service worker), a prima i push obaveštenja.
+
+- **Ikonice** su u `public/icons`. PNG-ovi se prave iz `icon.svg` i `badge.svg` skriptom `scripts/generate-icons.mjs` (uputstvo je u njenom zaglavlju) i commituju se.
+- **Service worker** (`ngsw-config.json`) radi samo u produkcionom build-u i samo preko **https ili localhost**. `ng serve` ga ne generiše, pa se PWA proverava ovako:
+
+  ```powershell
+  npm run build
+  npm run serve:prod     # http://localhost:4200, prosleđuje /api i /hubs na backend (port 5287)
+  ```
+
+- **Obaveštenja** se uključuju na stranici **Obaveštenja** (zvonce u zaglavlju; tačka na zvoncu i baner podsećaju dok nisu uključena). Svaki uređaj se uključuje posebno, a odjava skida uređaj sa naloga.
+- **iPhone:** obaveštenja rade tek kad se aplikacija doda na početni ekran (Deli, pa Dodaj na početni ekran, iOS 16.4+) i otvori sa ikonice, i samo preko https. Preko `http://192.168.x.x` (razvoj na lokalnoj mreži) browser ne dozvoljava ni service worker ni push, pa se to prvi put proverava na serveru sa sertifikatom.
+- API se ne kešira: podaci o smenama moraju biti sveži.
 
 ## Komande
 

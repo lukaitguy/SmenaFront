@@ -65,6 +65,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/employees/employees.page').then((m) => m.EmployeesPage),
       },
       {
+        path: 'obavestenja',
+        loadComponent: () => import('./features/notifications/notifications.page').then((m) => m.NotificationsPage),
+      },
+      {
         path: 'najave',
         loadComponent: () => import('./features/announcements/announcements.page').then((m) => m.AnnouncementsPage),
       },

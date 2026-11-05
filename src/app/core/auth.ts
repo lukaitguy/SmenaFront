@@ -24,6 +24,13 @@ export class AuthService {
   readonly timeZone = computed(() => this.user()?.restaurantTimeZoneId ?? 'Europe/Belgrade');
 
   private refreshing: Promise<boolean> | null = null;
+  private readonly logoutHooks = new Set<() => Promise<void>>();
+
+  /** Poziva se pri odjavi, dok je token još važeći (npr. skidanje uređaja sa push obaveštenja). Vraća uklanjanje. */
+  addLogoutHook(hook: () => Promise<void>): () => void {
+    this.logoutHooks.add(hook);
+    return () => this.logoutHooks.delete(hook);
+  }
 
   /**
    * Pokušava da vrati sesiju pri startu aplikacije. Nikad ne baca grešku. Refresh cookie je HttpOnly pa ga
@@ -74,6 +81,10 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    // Greška u nekom koraku ne sme da spreči odjavu.
+    if (this.logoutHooks.size > 0) {
+      await Promise.allSettled([...this.logoutHooks].map((hook) => hook()));
+    }
     try {
       await firstValueFrom(this.http.post('/api/auth/logout', null));
     } catch {

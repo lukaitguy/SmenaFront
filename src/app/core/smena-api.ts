@@ -44,6 +44,23 @@ export class SmenaApi {
   }
 
   /** Vremena su "HH:mm:ss" po lokalnom vremenu restorana; kraj pre ili jednak početku je smena do sutradan. */
+  pushConfig(): Promise<{ enabled: boolean; publicKey: string | null }> {
+    return firstValueFrom(this.http.get<{ enabled: boolean; publicKey: string | null }>('/api/push/config'));
+  }
+
+  subscribePush(subscription: { endpoint: string; keys: { p256dh: string; auth: string } }): Promise<void> {
+    return firstValueFrom(this.http.post<void>('/api/push/subscriptions', subscription));
+  }
+
+  unsubscribePush(endpoint: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>('/api/push/subscriptions', { params: { endpoint } }));
+  }
+
+  sendTestPush(): Promise<void> {
+    return firstValueFrom(this.http.post<void>('/api/push/test', null));
+  }
+
+  /** Vremena su "HH:mm:ss" po lokalnom vremenu restorana; kraj pre ili jednak početku je smena do sutradan. */
   createShiftTemplate(positionId: string, name: string, startTime: string, endTime: string): Promise<ShiftTemplate> {
     return firstValueFrom(this.http.post<ShiftTemplate>('/api/shift-templates', { positionId, name, startTime, endTime }));
   }
