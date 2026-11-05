@@ -169,3 +169,15 @@ export interface Claim {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Stavka sa 86 liste: nema je na stanju. Odeljak je pozicija Kuvar (kuhinja) ili Šanker (šank). */
+export interface EightySixItem {
+  id: string;
+  positionId: string;
+  positionName: string;
+  name: string;
+  note: string | null;
+  createdByEmployeeId: string;
+  createdByName: string;
+  createdAt: string;
+}

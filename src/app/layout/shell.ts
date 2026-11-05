@@ -18,7 +18,7 @@ import { AuthService } from '../core/auth';
           <span class="hidden text-lg tracking-tight sm:inline">Smena</span>
         </a>
 
-        <nav class="flex flex-1 items-center gap-1" aria-label="Glavna navigacija">
+        <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="Glavna navigacija">
           @for (item of nav(); track item.path) {
             <a
               [routerLink]="item.path"
@@ -56,12 +56,14 @@ export class Shell {
           { path: '/moje-smene', label: 'Moje smene' },
           { path: '/zamene', label: 'Zamene' },
           { path: '/slobodni-dani', label: 'Slobodni dani' },
+          { path: '/86-lista', label: '86 lista' },
         ]
       : [
           { path: '/moje-smene', label: 'Moje smene' },
           { path: '/raspored', label: 'Raspored' },
           { path: '/zamene', label: 'Zamene' },
           { path: '/slobodni-dani', label: 'Slobodni dani' },
+          { path: '/86-lista', label: '86 lista' },
         ],
   );
 

@@ -36,6 +36,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/days-off/days-off.page').then((m) => m.DaysOffPage),
       },
       {
+        path: '86-lista',
+        loadComponent: () => import('./features/eighty-six/eighty-six.page').then((m) => m.EightySixPage),
+      },
+      {
         path: 'zamene',
         loadComponent: () => import('./features/swaps/my-requests.page').then((m) => m.MyRequestsPage),
       },

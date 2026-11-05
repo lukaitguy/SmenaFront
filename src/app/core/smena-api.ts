@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   Claim,
+  EightySixItem,
   ClaimStatus,
   DayOff,
   DayOffStatus,
@@ -119,6 +120,18 @@ export class SmenaApi {
 
   deleteWish(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`/api/wishes/${id}`));
+  }
+
+  eightySix(): Promise<EightySixItem[]> {
+    return firstValueFrom(this.http.get<EightySixItem[]>('/api/eighty-six'));
+  }
+
+  addEightySix(positionId: string, name: string, note: string | null = null): Promise<EightySixItem> {
+    return firstValueFrom(this.http.post<EightySixItem>('/api/eighty-six', { positionId, name, note }));
+  }
+
+  removeEightySix(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/eighty-six/${id}`));
   }
 
   /** Otvorene smene koje prijavljeni zaposleni može da traži (njegove pozicije, tek počinju). */
