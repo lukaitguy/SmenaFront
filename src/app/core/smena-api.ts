@@ -43,6 +43,19 @@ export class SmenaApi {
     return firstValueFrom(this.http.get<Employee[]>('/api/employees'));
   }
 
+  createPosition(name: string): Promise<Position> {
+    return firstValueFrom(this.http.post<Position>('/api/positions', { name }));
+  }
+
+  renamePosition(id: string, name: string): Promise<Position> {
+    return firstValueFrom(this.http.put<Position>(`/api/positions/${id}`, { name }));
+  }
+
+  /** Ne može dok pozicija ima smene u rasporedu. */
+  deletePosition(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/positions/${id}`));
+  }
+
   updateEmployee(id: string, request: UpdateEmployeeRequest): Promise<Employee> {
     return firstValueFrom(this.http.put<Employee>(`/api/employees/${id}`, request));
   }

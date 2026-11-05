@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth';
 import { positionColor } from '../../core/colors';
 import { Employee, Invitation, Position } from '../../core/models';
@@ -16,14 +17,15 @@ import { InviteDialog } from './invite-dialog';
  */
 @Component({
   selector: 'app-employees-page',
-  imports: [EmployeeDialog, InviteDialog],
+  imports: [EmployeeDialog, InviteDialog, RouterLink],
   template: `
     <div class="mb-5 flex flex-wrap items-center gap-3">
       <div>
         <h1 class="text-xl font-semibold tracking-tight">Zaposleni</h1>
         <p class="text-sm text-slate-500">{{ active().length }} aktivnih · {{ invitations().length }} pozivnica na čekanju</p>
       </div>
-      <button type="button" class="btn-primary ml-auto" (click)="inviting.set(true)">+ Pozovi zaposlenog</button>
+      <a routerLink="/pozicije" class="btn-secondary ml-auto">Pozicije</a>
+      <button type="button" class="btn-primary" (click)="inviting.set(true)">+ Pozovi zaposlenog</button>
     </div>
 
     @if (error()) {
