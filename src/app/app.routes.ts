@@ -15,6 +15,20 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/register.page').then((m) => m.RegisterPage),
   },
+  // Linkovi iz mejla rade i kad je u istom browseru neko već prijavljen.
+  {
+    path: 'pozivnica',
+    loadComponent: () => import('./features/auth/invitation.page').then((m) => m.InvitationPage),
+  },
+  {
+    path: 'zaboravljena-lozinka',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'nova-lozinka',
+    loadComponent: () => import('./features/auth/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
   {
     path: '',
     component: Shell,

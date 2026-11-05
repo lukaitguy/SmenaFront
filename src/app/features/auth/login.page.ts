@@ -27,6 +27,9 @@ import { AuthLayout } from './auth-layout';
         <button type="submit" class="btn-primary w-full" [disabled]="busy()">
           {{ busy() ? 'Prijavljivanje…' : 'Prijavi se' }}
         </button>
+        <p class="text-center text-sm">
+          <a routerLink="/zaboravljena-lozinka" class="text-slate-600 hover:text-brand-700 hover:underline">Zaboravio/la si lozinku?</a>
+        </p>
       </form>
 
       <span footer>Nemaš restoran u Smeni? <a routerLink="/registracija" class="font-medium text-brand-600 hover:underline">Registruj ga</a></span>

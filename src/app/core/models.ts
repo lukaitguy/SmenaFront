@@ -96,6 +96,20 @@ export interface PublishRequest {
   positionIds: string[];
 }
 
+export interface InvitationPreview {
+  restaurantName: string;
+  email: string;
+  role: Role;
+  expiresAt: string;
+}
+
+export interface AcceptInvitationRequest {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
 export interface RegisterRequest {
   restaurantName: string;
   firstName: string;

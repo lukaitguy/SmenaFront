@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AccessTokenResponse, CurrentUser, RegisterRequest } from './models';
+import { AccessTokenResponse, AcceptInvitationRequest, CurrentUser, InvitationPreview, RegisterRequest } from './models';
 
 const SESSION_FLAG = 'smena.session';
 
@@ -44,6 +44,27 @@ export class AuthService {
   async register(request: RegisterRequest): Promise<void> {
     const response = await firstValueFrom(this.http.post<AccessTokenResponse>('/api/auth/register', request));
     await this.start(response);
+  }
+
+  /** Ko te zove i u koji restoran (token ide u telo zahteva, ne u URL). */
+  previewInvitation(token: string): Promise<InvitationPreview> {
+    return firstValueFrom(this.http.post<InvitationPreview>('/api/invitations/preview', { token }));
+  }
+
+  /** Pravi nalog iz pozivnice i odmah prijavljuje novog zaposlenog. */
+  async acceptInvitation(request: AcceptInvitationRequest): Promise<void> {
+    const response = await firstValueFrom(this.http.post<AccessTokenResponse>('/api/invitations/accept', request));
+    await this.start(response);
+  }
+
+  /** Server uvek odgovara isto, da se ne otkrije koji nalozi postoje. */
+  async forgotPassword(email: string): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/forgot-password', { email }));
+  }
+
+  /** Posle uspeha su sve sesije poništene: korisnik se prijavljuje novom lozinkom. */
+  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/reset-password', { email, token, newPassword }));
   }
 
   /** Osvežava token; više istovremenih poziva deli jedan zahtev. Vraća false ako sesija više ne važi. */
