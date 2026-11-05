@@ -7,6 +7,7 @@ import { SmenaApi } from '../../core/smena-api';
 import { addDays, formatWeekRange, localToUtc, todayIn, utcToLocal, weekDays, weekStart } from '../../core/time';
 import { GridRow, WeekGrid } from '../../schedule/week-grid';
 import { QuickAddDialog, QuickGroup } from '../../schedule/quick-add-dialog';
+import { NO_PREFERENCES, Preferences } from '../../schedule/preference-warning';
 import { ShiftDialog } from '../../schedule/shift-dialog';
 import { Modal } from '../../ui/modal';
 import { ToastService } from '../../ui/toast';
@@ -89,6 +90,7 @@ type DialogState = { shift: Shift | null; prefill: { employeeId: string | null; 
         [employeeId]="add.employeeId"
         [groups]="add.groups"
         [timeZone]="timeZone()"
+        [preferences]="preferences()"
         (created)="onSaved($event)"
         (other)="switchToCustom(add)"
         (closed)="quick.set(null)"
@@ -104,6 +106,7 @@ type DialogState = { shift: Shift | null; prefill: { employeeId: string | null; 
         [templates]="templates()"
         [timeZone]="timeZone()"
         [defaultPositionId]="filter() === 'all' ? null : filter()"
+        [preferences]="preferences()"
         (saved)="onSaved($event)"
         (closed)="dialog.set(null)"
       />
@@ -153,6 +156,7 @@ export class ManagerSchedulePage {
   protected readonly employees = signal<Employee[]>([]);
   protected readonly templates = signal<ShiftTemplate[]>([]);
   protected readonly shifts = signal<Shift[]>([]);
+  protected readonly preferences = signal<Preferences>(NO_PREFERENCES);
   protected readonly filter = signal<string>('all');
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
@@ -357,6 +361,21 @@ export class ManagerSchedulePage {
     }
   }
 
+  /** Želje i zahtevi radnika od početka nedelje; greška se ne prijavljuje jer je upozorenje samo pomoć. */
+  private async loadPreferences(start: string, request: number): Promise<void> {
+    try {
+      const [wishes, pendingDayOffs] = await Promise.all([
+        this.api.wishes(start, addDays(start, 120)),
+        this.api.dayOffs('Pending'),
+      ]);
+      if (request === this.requestCounter) {
+        this.preferences.set({ wishes, pendingDayOffs });
+      }
+    } catch {
+      // bez upozorenja, dodela i dalje radi
+    }
+  }
+
   private async loadShifts(start: string): Promise<void> {
     const request = ++this.requestCounter;
     this.loading.set(true);
@@ -367,6 +386,7 @@ export class ManagerSchedulePage {
       if (request === this.requestCounter) {
         this.shifts.set(shifts);
       }
+      await this.loadPreferences(start, request);
     } catch (e) {
       if (request === this.requestCounter) {
         this.error.set(errorMessage(e));

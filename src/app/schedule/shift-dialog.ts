@@ -6,6 +6,7 @@ import { errorMessage } from '../core/problem';
 import { SmenaApi } from '../core/smena-api';
 import { addDays, apiWeekdayName, isoWeekday, localToUtc, shortTime, utcToLocal } from '../core/time';
 import { Modal } from '../ui/modal';
+import { NO_PREFERENCES, Preferences, preferenceWarning, recurringDates } from './preference-warning';
 
 const WEEKDAYS = [
   { value: 1, label: 'Pon' },
@@ -145,6 +146,10 @@ const CUSTOM = '';
           </div>
         }
 
+        @if (warning(); as text) {
+          <p class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{{ text }}</p>
+        }
+
         @if (error()) {
           <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{{ error() }}</p>
         }
@@ -162,7 +167,7 @@ const CUSTOM = '';
         }
         <button type="button" class="btn-secondary" (click)="closed.emit()">Otkaži</button>
         <button type="submit" form="shift-form" class="btn-primary" [disabled]="busy()">
-          {{ busy() ? 'Čuvanje…' : editing() ? 'Sačuvaj' : repeat() ? 'Napravi smene' : 'Dodaj smenu' }}
+          {{ busy() ? 'Čuvanje…' : warning() ? 'Ipak postavi' : editing() ? 'Sačuvaj' : repeat() ? 'Napravi smene' : 'Dodaj smenu' }}
         </button>
       </ng-container>
     </app-modal>
@@ -179,6 +184,8 @@ export class ShiftDialog implements OnInit {
   readonly templates = input<ShiftTemplate[]>([]);
   readonly timeZone = input.required<string>();
   readonly defaultPositionId = input<string | null>(null);
+  /** Želje i zahtevi radnika; menadžer dobija upozorenje ako radnika postavlja protiv njih. */
+  readonly preferences = input<Preferences>(NO_PREFERENCES);
 
   /** Javlja da je upisano; tekst (ako postoji) roditelj prikazuje kao obaveštenje. */
   readonly saved = output<string>();
@@ -224,6 +231,15 @@ export class ShiftDialog implements OnInit {
       (e) => e.positions.some((p) => p.id === this.positionId()) || e.id === this.shift()?.employeeId,
     ),
   );
+
+  /** Upozorenje dok je izabrano nešto protiv želje radnika; dugme tada glasi "Ipak postavi". */
+  protected readonly warning = computed(() => {
+    const dates = this.repeat() && !this.editing()
+      ? recurringDates(this.date(), this.until(), this.repeatDays())
+      : [this.date()];
+    const name = this.choice() === CUSTOM ? null : (this.templates().find((t) => t.id === this.choice())?.name ?? null);
+    return preferenceWarning(this.preferences(), this.employeeId() || null, dates, name);
+  });
 
   private readonly selectedEmployee = computed(() => this.employees().find((e) => e.id === this.employeeId()));
 

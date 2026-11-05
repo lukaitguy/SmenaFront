@@ -52,11 +52,16 @@ export class Shell {
     this.auth.isManager()
       ? [
           { path: '/raspored', label: 'Raspored' },
+          { path: '/zahtevi', label: 'Zahtevi' },
           { path: '/moje-smene', label: 'Moje smene' },
+          { path: '/zamene', label: 'Zamene' },
+          { path: '/slobodni-dani', label: 'Slobodni dani' },
         ]
       : [
           { path: '/moje-smene', label: 'Moje smene' },
           { path: '/raspored', label: 'Raspored' },
+          { path: '/zamene', label: 'Zamene' },
+          { path: '/slobodni-dani', label: 'Slobodni dani' },
         ],
   );
 

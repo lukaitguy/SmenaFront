@@ -59,6 +59,51 @@ describe('QuickAddDialog', () => {
     fixture.detectChanges();
   }
 
+  async function wish(preferredShift: string): Promise<void> {
+    fixture.componentRef.setInput('preferences', {
+      wishes: [{ id: 'w', employeeId: 'e-ana', employeeName: 'Ana', date: '2026-11-05', preferredShift, createdAt: '2026-11-01T00:00:00Z' }],
+      pendingDayOffs: [],
+    });
+    await settle();
+  }
+
+  it('asks for confirmation before putting the employee into a shift she did not wish', async () => {
+    await wish('I');
+
+    button('II').click();
+    await settle();
+
+    http.expectNone('/api/shifts');
+    expect(root().querySelector('[role=alert]')?.textContent).toContain('Da li ste sigurni');
+
+    button('Da, postavi smenu II').click();
+    await settle();
+    http.expectOne('/api/shifts').flush(shift());
+    await settle();
+    expect(created).toHaveLength(1);
+  });
+
+  it('can be cancelled without creating anything', async () => {
+    await wish('I');
+
+    button('II').click();
+    await settle();
+    button('Ne').click();
+    await settle();
+
+    http.expectNone('/api/shifts');
+    expect(root().querySelector('[role=alert]')).toBeNull();
+  });
+
+  it('creates at once when the shift is the wished one', async () => {
+    await wish('I');
+
+    button('I').click();
+    await settle();
+
+    http.expectOne('/api/shifts').flush(shift());
+  });
+
   it('shows who and which day, and one button per shift of the position', () => {
     expect(root().textContent).toContain('Ana Petrović');
     expect(root().textContent).toContain('Četvrtak, 5. novembar');

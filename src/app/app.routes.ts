@@ -32,6 +32,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/schedule/roster.page').then((m) => m.RosterPage),
       },
       {
+        path: 'slobodni-dani',
+        loadComponent: () => import('./features/days-off/days-off.page').then((m) => m.DaysOffPage),
+      },
+      {
+        path: 'zamene',
+        loadComponent: () => import('./features/swaps/my-requests.page').then((m) => m.MyRequestsPage),
+      },
+      {
+        path: 'zahtevi',
+        canMatch: [managerMatch],
+        loadComponent: () => import('./features/requests/requests.page').then((m) => m.RequestsPage),
+      },
+      {
         path: 'moje-smene',
         loadComponent: () => import('./features/my/my-shifts.page').then((m) => m.MyShiftsPage),
       },

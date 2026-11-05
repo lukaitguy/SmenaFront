@@ -4,6 +4,8 @@ import { positionColor } from '../../core/colors';
 import { Shift } from '../../core/models';
 import { errorMessage } from '../../core/problem';
 import { SmenaApi } from '../../core/smena-api';
+import { ToastService } from '../../ui/toast';
+import { SwapDialog } from '../swaps/swap-dialog';
 import { addDays, formatDayLong, formatDuration, localToUtc, todayIn, utcToLocal } from '../../core/time';
 
 interface DayGroup {
@@ -17,6 +19,7 @@ const HORIZON_DAYS = 30;
 /** "Moje smene": objavljene smene prijavljenog zaposlenog u narednih 30 dana, po danima. */
 @Component({
   selector: 'app-my-shifts-page',
+  imports: [SwapDialog],
   template: `
     <div class="mb-5">
       <h1 class="text-xl font-semibold tracking-tight">Moje smene</h1>
@@ -80,6 +83,9 @@ const HORIZON_DAYS = 30;
                     }
                   </div>
                   <div class="text-sm opacity-75">{{ duration(item.shift) }}</div>
+                  @if (canSwap(item.shift)) {
+                    <button type="button" class="btn-secondary shrink-0 px-3 py-1.5" (click)="swapping.set(item.shift)">Zameni</button>
+                  }
                 </li>
               }
             </ul>
@@ -87,16 +93,22 @@ const HORIZON_DAYS = 30;
         }
       </ol>
     }
+
+    @if (swapping(); as shift) {
+      <app-swap-dialog [shift]="shift" (sent)="onSwapSent($event)" (closed)="swapping.set(null)" />
+    }
   `,
 })
 export class MyShiftsPage {
   private readonly api = inject(SmenaApi);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
   protected readonly horizon = HORIZON_DAYS;
   protected readonly shifts = signal<Shift[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly swapping = signal<Shift | null>(null);
 
   protected readonly groups = computed<DayGroup[]>(() => {
     const timeZone = this.auth.timeZone();
@@ -127,6 +139,15 @@ export class MyShiftsPage {
 
   constructor() {
     void this.load();
+  }
+
+  protected canSwap(shift: Shift): boolean {
+    return new Date(shift.startsAt).getTime() > Date.now();
+  }
+
+  protected onSwapSent(message: string): void {
+    this.swapping.set(null);
+    this.toast.success(message);
   }
 
   protected color(shift: Shift) {

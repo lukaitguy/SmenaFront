@@ -104,3 +104,68 @@ export interface RegisterRequest {
   password: string;
   timeZoneId?: string | null;
 }
+
+export type DayOffStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+
+export interface DayOff {
+  id: string;
+  status: DayOffStatus;
+  /** Kalendarski dan "YYYY-MM-DD" u zoni restorana. */
+  date: string;
+  employeeId: string;
+  employeeName: string;
+  reason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Želja radnika za dan: "mogu smenu {preferredShift} ili sam slobodan". Važi odmah i ništa ne blokira. */
+export interface Wish {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  preferredShift: string;
+  createdAt: string;
+}
+
+/** Pending čeka kolegu, Accepted čeka menadžera. */
+export type SwapStatus = 'Pending' | 'Accepted' | 'Declined' | 'Approved' | 'Rejected' | 'Cancelled';
+
+/** Prepuštanje smene kolegi, ili razmena kad postoji targetShiftId. */
+export interface Swap {
+  id: string;
+  status: SwapStatus;
+  shiftId: string;
+  shiftStartsAt: string;
+  shiftEndsAt: string;
+  positionName: string;
+  requesterId: string;
+  requesterName: string;
+  targetId: string;
+  targetName: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  targetShiftId: string | null;
+  targetShiftStartsAt: string | null;
+  targetShiftEndsAt: string | null;
+  targetPositionName: string | null;
+}
+
+export type ClaimStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+
+/** Zahtev zaposlenog da preuzme otvorenu smenu. */
+export interface Claim {
+  id: string;
+  status: ClaimStatus;
+  shiftId: string;
+  shiftStartsAt: string;
+  shiftEndsAt: string;
+  positionName: string;
+  employeeId: string;
+  employeeName: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

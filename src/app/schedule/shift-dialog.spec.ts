@@ -2,9 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { Shift } from '../core/models';
+import { Shift, Wish } from '../core/models';
 import { ANA, BARTENDER, BARTENDER_FIRST, BARTENDER_SECOND, FIRST, MARKO, NEMANJA, SECOND, WAITER, shift } from './schedule.fixtures';
 import { ShiftDialog } from './shift-dialog';
+
+const WISH_I: Wish = {
+  id: 'w1', employeeId: ANA.id, employeeName: 'Ana', date: '2026-11-05', preferredShift: 'I', createdAt: '2026-11-01T00:00:00Z',
+};
 
 const TEMPLATES = [FIRST, SECOND];
 
@@ -36,6 +40,7 @@ describe('ShiftDialog', () => {
     prefill?: { employeeId: string | null; date: string; custom?: boolean } | null;
     templates?: typeof TEMPLATES;
     defaultPositionId?: string | null;
+    wishes?: Wish[];
   }): Promise<HTMLElement> {
     fixture = TestBed.createComponent(ShiftDialog);
     fixture.componentRef.setInput('shift', inputs.shift ?? null);
@@ -45,6 +50,7 @@ describe('ShiftDialog', () => {
     fixture.componentRef.setInput('templates', inputs.templates ?? TEMPLATES);
     fixture.componentRef.setInput('timeZone', 'Europe/Belgrade');
     fixture.componentRef.setInput('defaultPositionId', inputs.defaultPositionId ?? null);
+    fixture.componentRef.setInput('preferences', { wishes: inputs.wishes ?? [], pendingDayOffs: [] });
     fixture.componentInstance.saved.subscribe((message) => saved.push(message));
     fixture.detectChanges();
     await fixture.whenStable();
@@ -86,6 +92,27 @@ describe('ShiftDialog', () => {
     expect(root.textContent).toContain('08:00–16:00');
     expect(root.textContent).toContain('16:00–00:00');
     expect(root.querySelector('#start')).toBeNull();
+  });
+
+  it('warns when the employee wished another shift, and the button then says it is deliberate', async () => {
+    const root = await open({ prefill: { employeeId: ANA.id, date: '2026-11-05' }, wishes: [WISH_I] });
+    expect(root.querySelector('[role=alert]')).toBeNull(); // I je upravo ono što je tražila
+
+    button(root, 'II').click();
+    await settle();
+
+    expect(root.querySelector('[role=alert]')?.textContent).toContain('Da li ste sigurni');
+    expect(button(root, 'Ipak postavi')).toBeTruthy();
+
+    // Upozorenje ne blokira: potvrda je upis.
+    await submit(root);
+    http.expectOne('/api/shifts').flush(shift());
+  });
+
+  it('does not warn for an open shift', async () => {
+    const root = await open({ prefill: { employeeId: null, date: '2026-11-05' }, wishes: [WISH_I] });
+
+    expect(root.querySelector('[role=alert]')).toBeNull();
   });
 
   it('creates a shift from the preselected template', async () => {

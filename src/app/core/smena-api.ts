@@ -2,6 +2,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
+  Claim,
+  ClaimStatus,
+  DayOff,
+  DayOffStatus,
   Employee,
   Position,
   PublishRequest,
@@ -10,6 +14,9 @@ import {
   SaveShiftRequest,
   Shift,
   ShiftTemplate,
+  Swap,
+  SwapStatus,
+  Wish,
 } from './models';
 
 /** Tanak omotač oko HTTP poziva ka Smena API-ju. Auth pozivi su u AuthService. */
@@ -74,6 +81,90 @@ export class SmenaApi {
         request,
       ),
     );
+  }
+
+  requestDayOff(date: string, reason: string | null): Promise<DayOff> {
+    return firstValueFrom(this.http.post<DayOff>('/api/dayoffs', { date, reason }));
+  }
+
+  myDayOffs(from: string, to: string): Promise<DayOff[]> {
+    return firstValueFrom(this.http.get<DayOff[]>('/api/dayoffs/mine', { params: { from, to } }));
+  }
+
+  /** Zahtevi cele ekipe (menadžer), opciono samo sa jednim statusom. */
+  dayOffs(status?: DayOffStatus): Promise<DayOff[]> {
+    return firstValueFrom(this.http.get<DayOff[]>('/api/dayoffs', { params: status ? { status } : {} }));
+  }
+
+  cancelDayOff(id: string): Promise<DayOff> {
+    return firstValueFrom(this.http.post<DayOff>(`/api/dayoffs/${id}/cancel`, null));
+  }
+
+  decideDayOff(id: string, decision: 'approve' | 'reject'): Promise<DayOff> {
+    return firstValueFrom(this.http.post<DayOff>(`/api/dayoffs/${id}/${decision}`, null));
+  }
+
+  saveWish(date: string, preferredShift: string): Promise<Wish> {
+    return firstValueFrom(this.http.put<Wish>('/api/wishes', { date, preferredShift }));
+  }
+
+  myWishes(from: string, to: string): Promise<Wish[]> {
+    return firstValueFrom(this.http.get<Wish[]>('/api/wishes/mine', { params: { from, to } }));
+  }
+
+  /** Želje cele ekipe (menadžer) u periodu. */
+  wishes(from: string, to: string): Promise<Wish[]> {
+    return firstValueFrom(this.http.get<Wish[]>('/api/wishes', { params: { from, to } }));
+  }
+
+  deleteWish(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/wishes/${id}`));
+  }
+
+  /** Otvorene smene koje prijavljeni zaposleni može da traži (njegove pozicije, tek počinju). */
+  openShifts(from: Date, to: Date): Promise<Shift[]> {
+    return firstValueFrom(this.http.get<Shift[]>('/api/shifts/open', { params: range(from, to) }));
+  }
+
+  claimShift(shiftId: string, note: string | null): Promise<Claim> {
+    return firstValueFrom(this.http.post<Claim>(`/api/shifts/${shiftId}/claims`, { note }));
+  }
+
+  myClaims(status?: ClaimStatus): Promise<Claim[]> {
+    return firstValueFrom(this.http.get<Claim[]>('/api/claims/mine', { params: status ? { status } : {} }));
+  }
+
+  claims(status?: ClaimStatus): Promise<Claim[]> {
+    return firstValueFrom(this.http.get<Claim[]>('/api/claims', { params: status ? { status } : {} }));
+  }
+
+  cancelClaim(id: string): Promise<Claim> {
+    return firstValueFrom(this.http.post<Claim>(`/api/claims/${id}/cancel`, null));
+  }
+
+  decideClaim(id: string, decision: 'approve' | 'reject'): Promise<Claim> {
+    return firstValueFrom(this.http.post<Claim>(`/api/claims/${id}/${decision}`, null));
+  }
+
+  /** Prepuštanje smene kolegi (targetEmployeeId) ili razmena za njegovu smenu (targetShiftId). */
+  createSwap(request: { shiftId: string; targetEmployeeId: string | null; targetShiftId: string | null; note: string | null }): Promise<Swap> {
+    return firstValueFrom(this.http.post<Swap>('/api/swaps', request));
+  }
+
+  mySwaps(status?: SwapStatus): Promise<Swap[]> {
+    return firstValueFrom(this.http.get<Swap[]>('/api/swaps/mine', { params: status ? { status } : {} }));
+  }
+
+  swaps(status?: SwapStatus): Promise<Swap[]> {
+    return firstValueFrom(this.http.get<Swap[]>('/api/swaps', { params: status ? { status } : {} }));
+  }
+
+  respondToSwap(id: string, action: 'accept' | 'decline' | 'cancel'): Promise<Swap> {
+    return firstValueFrom(this.http.post<Swap>(`/api/swaps/${id}/${action}`, null));
+  }
+
+  decideSwap(id: string, decision: 'approve' | 'reject'): Promise<Swap> {
+    return firstValueFrom(this.http.post<Swap>(`/api/swaps/${id}/${decision}`, null));
   }
 }
 

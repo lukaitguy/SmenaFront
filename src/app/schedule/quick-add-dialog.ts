@@ -5,6 +5,7 @@ import { errorMessage } from '../core/problem';
 import { SmenaApi } from '../core/smena-api';
 import { addDays, formatDayLong, localToUtc, shortTime } from '../core/time';
 import { Modal } from '../ui/modal';
+import { NO_PREFERENCES, Preferences, preferenceWarning } from './preference-warning';
 
 export interface QuickGroup {
   position: Position;
@@ -52,6 +53,18 @@ export interface QuickGroup {
           </section>
         }
 
+        @if (confirming(); as ask) {
+          <div class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-sm text-amber-900" role="alert">
+            <p>{{ ask.text }}</p>
+            <div class="mt-2 flex gap-2">
+              <button type="button" class="btn-primary px-3 py-1.5" [disabled]="busy()" (click)="submit(ask.position, ask.template)">
+                Da, postavi smenu {{ ask.template.name }}
+              </button>
+              <button type="button" class="btn-secondary px-3 py-1.5" (click)="confirming.set(null)">Ne</button>
+            </div>
+          </div>
+        }
+
         @if (error()) {
           <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{{ error() }}</p>
         }
@@ -72,6 +85,8 @@ export class QuickAddDialog {
   readonly employeeId = input<string | null>(null);
   readonly groups = input.required<QuickGroup[]>();
   readonly timeZone = input.required<string>();
+  /** Želje i zahtevi radnika; pre upisa protiv njih traži se potvrda. */
+  readonly preferences = input<Preferences>(NO_PREFERENCES);
 
   readonly created = output<string>();
   readonly other = output<void>();
@@ -79,6 +94,7 @@ export class QuickAddDialog {
 
   protected readonly busy = signal(false);
   protected readonly error = signal('');
+  protected readonly confirming = signal<{ position: Position; template: ShiftTemplate; text: string } | null>(null);
 
   protected dayLabel(): string {
     return formatDayLong(this.date());
@@ -93,6 +109,16 @@ export class QuickAddDialog {
   }
 
   protected async create(position: Position, template: ShiftTemplate): Promise<void> {
+    const text = preferenceWarning(this.preferences(), this.employeeId(), [this.date()], template.name);
+    if (text) {
+      this.confirming.set({ position, template, text });
+      return;
+    }
+    await this.submit(position, template);
+  }
+
+  protected async submit(position: Position, template: ShiftTemplate): Promise<void> {
+    this.confirming.set(null);
     this.busy.set(true);
     this.error.set('');
     try {
