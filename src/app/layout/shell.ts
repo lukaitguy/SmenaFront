@@ -1,6 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth';
+import { BoardConnection } from '../core/board';
 
 @Component({
   selector: 'app-shell',
@@ -47,6 +48,13 @@ import { AuthService } from '../core/auth';
 })
 export class Shell {
   protected readonly auth = inject(AuthService);
+  private readonly board = inject(BoardConnection);
+
+  constructor() {
+    // Dok je neko prijavljen, ekran smene prima promene uživo; odjava (uništen shell) prekida vezu.
+    this.board.start();
+    inject(DestroyRef).onDestroy(() => void this.board.stop());
+  }
 
   protected readonly nav = computed(() =>
     this.auth.isManager()

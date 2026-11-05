@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth';
+import { BoardConnection } from '../../core/board';
 import { EightySixItem, Position } from '../../core/models';
 import { errorMessage } from '../../core/problem';
 import { SmenaApi } from '../../core/smena-api';
@@ -29,7 +31,14 @@ interface Section {
   template: `
     <div class="mb-5">
       <h1 class="text-xl font-semibold tracking-tight">86 lista</h1>
-      <p class="text-sm text-slate-500">Ovoga trenutno nema. Ne nudi gostima dok se ne vrati na listu ponude.</p>
+      <p class="text-sm text-slate-500">
+        Ovoga trenutno nema. Ne nudi gostima dok se ne vrati na listu ponude.
+        @if (live()) {
+          <span class="ml-1 inline-flex items-center gap-1 text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>uživo</span>
+        } @else {
+          <span class="ml-1 inline-flex items-center gap-1 text-amber-700" role="status"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>povezivanje…</span>
+        }
+      </p>
     </div>
 
     @if (error()) {
@@ -92,7 +101,9 @@ interface Section {
 export class EightySixPage {
   private readonly api = inject(SmenaApi);
   private readonly auth = inject(AuthService);
+  private readonly board = inject(BoardConnection);
 
+  protected readonly live = computed(() => this.board.status() === 'connected');
   protected readonly positions = signal<Position[]>([]);
   protected readonly items = signal<EightySixItem[]>([]);
   protected readonly loading = signal(true);
@@ -113,6 +124,16 @@ export class EightySixPage {
 
   constructor() {
     void this.load();
+
+    // Promene koje su napravili drugi stižu odmah. Dupli red se ne dodaje: i onaj ko menja dobija svoj događaj.
+    this.board.eightySixAdded.pipe(takeUntilDestroyed()).subscribe((added) =>
+      this.items.update((list) => (list.some((i) => i.id === added.id) ? list : [...list, added])),
+    );
+    this.board.eightySixRemoved.pipe(takeUntilDestroyed()).subscribe((id) =>
+      this.items.update((list) => list.filter((i) => i.id !== id)),
+    );
+    // Posle prekida veze (ili tek uspostavljene) se ne veruje da ništa nije propušteno: povlači se ceo snimak stanja.
+    this.board.reconnected.pipe(takeUntilDestroyed()).subscribe(() => void this.refresh());
   }
 
   protected draft(section: Section): string {
@@ -157,6 +178,14 @@ export class EightySixPage {
       this.error.set(errorMessage(e));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async refresh(): Promise<void> {
+    try {
+      this.items.set(await this.api.eightySix());
+    } catch {
+      // Sledeći događaj ili ponovno povezivanje će ispraviti prikaz.
     }
   }
 

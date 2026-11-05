@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AuthService } from '../../core/auth';
+import { BoardConnection } from '../../core/board';
 import { CurrentUser, EightySixItem, Position } from '../../core/models';
 import { EightySixPage } from './eighty-six.page';
 
@@ -121,6 +122,41 @@ describe('EightySixPage', () => {
     fixture.detectChanges();
     fixture.detectChanges();
 
+    expect(root.textContent).not.toContain('Pljeskavica');
+  });
+
+  it('shows an item the moment someone else adds it, without duplicating one we added ourselves', async () => {
+    const root = await open('Staff', [WAITER]);
+    const board = TestBed.inject(BoardConnection);
+    const fresh = item({ id: 'i-9', name: 'Brancin' });
+
+    board.eightySixAdded.next(fresh);
+    board.eightySixAdded.next(fresh);
+    fixture.detectChanges();
+
+    expect(root.textContent?.match(/Brancin/g)).toHaveLength(1);
+    expect(sections(root)[0].querySelector('h2')?.textContent).toContain('2');
+  });
+
+  it('drops an item the moment someone else takes it off the list', async () => {
+    const root = await open('Staff', [WAITER]);
+
+    TestBed.inject(BoardConnection).eightySixRemoved.next('i-1');
+    fixture.detectChanges();
+
+    expect(root.textContent).not.toContain('Pljeskavica');
+    expect(root.textContent).toContain('Heineken');
+  });
+
+  it('pulls the whole list again after the connection comes back', async () => {
+    const root = await open('Staff', [WAITER]);
+
+    TestBed.inject(BoardConnection).reconnected.next();
+    http.expectOne('/api/eighty-six').flush([item({ id: 'i-7', name: 'Jastog' })]);
+    await tick();
+    fixture.detectChanges();
+
+    expect(root.textContent).toContain('Jastog');
     expect(root.textContent).not.toContain('Pljeskavica');
   });
 });
